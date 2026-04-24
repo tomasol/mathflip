@@ -292,7 +292,7 @@ Second Chance,4</textarea></div>
                     await executeFlip3(target);
                 } 
                 else if(card.val.includes('Second Chance')) {
-                    let opts = game.players.filter(p => p.secondChance === 0).map(p => ({...p}));
+                    let opts = game.players.filter(p => p.secondChance === 0 && p.status !== 'frozen').map(p => ({...p}));
                     opts.push({id: -1, name: 'Discard it'});
                     let prompt = player.secondChance === 0
                         ? `${player.name}, keep the Second Chance or give it away?`
@@ -306,10 +306,6 @@ Second Chance,4</textarea></div>
                         let msg = target.id === player.id
                             ? `⭐ ${player.name} kept the Second Chance!`
                             : `⭐ ${target.name} was given a Second Chance!`;
-                        if(realTarget.status === 'frozen') {
-                            realTarget.status = 'active';
-                            msg += `<br>❄️ ${realTarget.name} is unfrozen!`;
-                        }
                         await showMessage(msg);
                     }
                 }
