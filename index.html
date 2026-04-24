@@ -300,10 +300,15 @@ Second Chance,4</textarea></div>
                     if(target.id === -1) {
                         await showMessage(`Second Chance discarded.`);
                     } else {
-                        game.players[target.id].secondChance++;
+                        let realTarget = game.players[target.id];
+                        realTarget.secondChance++;
                         let msg = target.id === player.id
                             ? `⭐ ${player.name} kept the Second Chance!`
                             : `⭐ ${target.name} was given a Second Chance!`;
+                        if(realTarget.status === 'frozen') {
+                            realTarget.status = 'active';
+                            msg += `<br>❄️ ${realTarget.name} is unfrozen!`;
+                        }
                         await showMessage(msg);
                     }
                 }
