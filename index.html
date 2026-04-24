@@ -4,75 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Flip - Card Game</title>
-    <style>
-        :root {
-            --primary: #0d6efd; --success: #198754; --danger: #dc3545; --warning: #ffc107;
-            --bg: #f0f2f5; --card-bg: white;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 0; background: var(--bg); display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
-        }
-        
-        /* Screens */
-        .screen { display: none; width: 100%; height: 100%; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .screen.active { display: block; }
-        
-        /* Setup Screen */
-        .setup-container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .config-section { background: #f8f9fa; padding: 10px; margin-top: 20px; border-radius: 5px; border: 1px solid #ddd; }
-        .config-section summary { font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .row > div { flex: 1; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #444; }
-        input[type="number"], input[type="text"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        textarea { height: 60px; }
-        button { padding: 10px 15px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; color: white; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
-        .btn-primary { background: var(--primary); width: 100%; margin-top: 15px; font-size: 18px; padding: 15px; }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
-        .btn-warning { background: var(--warning); color: black; }
-
-        /* Game Board */
-        #top-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; border-radius: 8px; }
-        #turn-indicator { font-size: 24px; font-weight: bold; color: var(--primary); }
-        
-        #players-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .player-card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid transparent; transition: 0.3s; }
-        .player-card.active-turn { border-color: var(--primary); box-shadow: 0 0 15px rgba(13,110,253,0.3); transform: scale(1.02); }
-        .player-card.frozen { opacity: 0.7; border-color: var(--warning); background: #fffdf5; }
-        .player-card.busted { opacity: 0.7; border-color: var(--danger); background: #fdf5f5; }
-        
-        .p-name { font-size: 20px; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        .p-stat { font-size: 14px; margin: 5px 0; }
-        .p-stat span { font-weight: bold; font-size: 16px; }
-        .p-cards-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 40px; background: #f8f9fa; padding: 5px; border-radius: 4px; }
-        .mini-card { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid black; background: white; }
-        .mini-card.number { border: 1px solid black; }
-        .mini-card.positive { border: 2px solid black; }
-        .mini-card.negative { border: 1px dashed black; }
-        .mini-card.special { border: 2px double black; background: #fff3cd; }
-
-        .actions { margin-top: 15px; display: flex; gap: 10px; }
-        .actions button { flex: 1; padding: 10px; display: none; }
-        .active-turn .actions button { display: block; }
-
-        /* Modals */
-        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
-        .modal { background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal h2 { margin-top: 0; color: #333; }
-        .modal p { font-size: 18px; margin-bottom: 20px; }
-        
-        .math-input-group { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        .math-input-group input { font-size: 24px; text-align: center; width: 150px; padding: 10px; }
-        .error-shake { animation: shake 0.4s; border-color: var(--danger) !important; background: #fdf5f5; }
-        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
-
-        .choice-btn { width: 100%; margin-bottom: 10px; padding: 12px; font-size: 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; }
-        .choice-btn:hover { background: #0b5ed7; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
