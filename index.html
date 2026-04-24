@@ -363,6 +363,7 @@ Second Chance,4</textarea></div>
             let content = document.getElementById('modal-content');
             content.innerHTML = html;
             overlay.style.display = 'flex';
+            if(document.activeElement) document.activeElement.blur();
         }
         function hideModal() {
             document.getElementById('modal-overlay').style.display = 'none';
@@ -374,7 +375,9 @@ Second Chance,4</textarea></div>
                     <p>${msgText}</p>
                     <button class="btn-primary" id="msg-btn">${btnText}</button>
                 `);
-                document.getElementById('msg-btn').onclick = () => { hideModal(); resolve(); };
+                let btn = document.getElementById('msg-btn');
+                btn.focus();
+                btn.onclick = () => { hideModal(); resolve(); };
             });
         }
 
