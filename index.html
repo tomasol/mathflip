@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Flip - Card Game</title>
+    <style>
+        :root {
+            --primary: #0d6efd; --success: #198754; --danger: #dc3545; --warning: #ffc107;
+            --bg: #f0f2f5; --card-bg: white;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0; background: var(--bg); display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+        
+        /* Screens */
+        .screen { display: none; width: 100%; height: 100%; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .screen.active { display: block; }
+        
+        /* Setup Screen */
+        .setup-container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .config-section { background: #f8f9fa; padding: 10px; margin-top: 20px; border-radius: 5px; border: 1px solid #ddd; }
+        .config-section summary { font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .row > div { flex: 1; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #444; }
+        input[type="number"], input[type="text"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        textarea { height: 60px; }
+        button { padding: 10px 15px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; color: white; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-primary { background: var(--primary); width: 100%; margin-top: 15px; font-size: 18px; padding: 15px; }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: black; }
+
+        /* Game Board */
+        #top-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; border-radius: 8px; }
+        #turn-indicator { font-size: 24px; font-weight: bold; color: var(--primary); }
+        
+        #players-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .player-card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid transparent; transition: 0.3s; }
+        .player-card.active-turn { border-color: var(--primary); box-shadow: 0 0 15px rgba(13,110,253,0.3); transform: scale(1.02); }
+        .player-card.frozen { opacity: 0.7; border-color: var(--warning); background: #fffdf5; }
+        .player-card.busted { opacity: 0.7; border-color: var(--danger); background: #fdf5f5; }
+        
+        .p-name { font-size: 20px; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .p-stat { font-size: 14px; margin: 5px 0; }
+        .p-stat span { font-weight: bold; font-size: 16px; }
+        .p-cards-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; min-height: 40px; background: #f8f9fa; padding: 5px; border-radius: 4px; }
+        .mini-card { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid black; background: white; }
+        .mini-card.number { border: 1px solid black; }
+        .mini-card.positive { border: 2px solid black; }
+        .mini-card.negative { border: 1px dashed black; }
+        .mini-card.special { border: 2px double black; background: #fff3cd; }
+
+        .actions { margin-top: 15px; display: flex; gap: 10px; }
+        .actions button { flex: 1; padding: 10px; display: none; }
+        .active-turn .actions button { display: block; }
+
+        /* Modals */
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+        .modal { background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal h2 { margin-top: 0; color: #333; }
+        .modal p { font-size: 18px; margin-bottom: 20px; }
+        
+        .math-input-group { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .math-input-group input { font-size: 24px; text-align: center; width: 150px; padding: 10px; }
+        .error-shake { animation: shake 0.4s; border-color: var(--danger) !important; background: #fdf5f5; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+
+        .choice-btn { width: 100%; margin-bottom: 10px; padding: 12px; font-size: 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .choice-btn:hover { background: #0b5ed7; }
+    </style>
+</head>
+<body>
+
+    <!-- Setup Screen -->
+    <div id="screen-setup" class="screen active">
+        <div class="setup-container">
+            <h1 style="text-align: center; color: var(--primary);">Math Flip</h1>
+            <p style="text-align: center;">First to 200 points wins!</p>
+            
+            <label>Number of Players (2-6)</label>
+            <input type="number" id="playerCount" value="2" min="2" max="6" onchange="generatePlayerInputs()">
+            
+            <div id="player-names-container" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <!-- Generated dynamically -->
+            </div>
+
+            <details class="config-section">
+                <summary>Advanced Deck Configuration (Optional)</summary>
+                <div class="row">
+                    <div><label>Number Min</label><input type="number" id="numMin" value="5"></div>
+                    <div><label>Number Max</label><input type="number" id="numMax" value="16"></div>
+                    <div><label>Formula</label><input type="text" id="numFormula" value="n - 4"></div>
+                </div>
+                <div class="row">
+                    <div><label>Positive Values</label><input type="text" id="posValues" value="2,3,4,5,6,7,8,9,10,11,12"></div>
+                    <div><label>Copies</label><input type="number" id="posCopies" value="2"></div>
+                </div>
+                <div class="row">
+                    <div><label>Negative Values</label><input type="text" id="negValues" value="2,3,4,5,6,7,8,9,10,13,18"></div>
+                    <div><label>Copies</label><input type="number" id="negCopies" value="1"></div>
+                </div>
+                <div><label>Special Cards (Name,Count)</label>
+                <textarea id="specialCards">Flip 3,4
+Freeze,4
+Second Chance,4</textarea></div>
+            </details>
+
+            <button class="btn-primary" onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="screen-game" class="screen">
+        <div id="top-bar">
+            <div id="turn-indicator">Player 1's Turn</div>
+            <div>
+                <strong>Deck:</strong> <span id="deck-count">0</span> cards left
+            </div>
+        </div>
+        <div id="players-grid">
+            <!-- Player cards generated here -->
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay">
+        <div id="modal-content" class="modal">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <script>
+        // --- DECK GENERATOR LOGIC ---
+        function safeEvalFormula(formulaStr, nValue) {
+            try {
+                let safeStr = formulaStr.toLowerCase().replace(/[^n0-9+\-*/().]/g, '');
+                safeStr = safeStr.replace(/n/g, nValue);
+                let result = new Function('return ' + safeStr)();
+                return isNaN(result) ? 0 : Math.max(0, Math.floor(result));
+            } catch (e) { return 0; }
+        }
+
+        function createDeck() {
+            let deck =[];
+            // Number
+            let numMin = parseInt(document.getElementById('numMin').value) || 5;
+            let numMax = parseInt(document.getElementById('numMax').value) || 16;
+            let numF = document.getElementById('numFormula').value;
+            for(let i = numMin; i <= numMax; i++) {
+                let count = safeEvalFormula(numF, i);
+                for(let c=0; c<count; c++) deck.push({ type: 'number', val: i.toString() });
+            }
+            // Positive
+            let posArr = document.getElementById('posValues').value.split(',').map(s => s.trim()).filter(s => s);
+            let posC = parseInt(document.getElementById('posCopies').value) || 2;
+            posArr.forEach(v => {
+                let cleanV = v.replace(/^\+/, '');
+                for(let c=0; c<posC; c++) deck.push({ type: 'positive', val: '+' + cleanV });
+            });
+            // Negative
+            let negArr = document.getElementById('negValues').value.split(',').map(s => s.trim()).filter(s => s);
+            let negC = parseInt(document.getElementById('negCopies').value) || 1;
+            negArr.forEach(v => {
+                let cleanV = v.replace(/^-/, '');
+                for(let c=0; c<negC; c++) deck.push({ type: 'negative', val: '-' + cleanV });
+            });
+            // Special
+            let lines = document.getElementById('specialCards').value.split('\n');
+            lines.forEach(line => {
+                let parts = line.split(',');
+                if(parts.length >= 2) {
+                    let name = parts[0].trim();
+                    let count = parseInt(parts[1].trim()) || 0;
+                    for(let c=0; c<count; c++) deck.push({ type: 'special', val: name });
+                }
+            });
+
+            // Shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            return deck;
+        }
+
+        // --- GAME STATE ---
+        let game = {
+            players:[],
+            deck:[],
+            currPlayerIdx: 0,
+            roundActive: false
+        };
+
+        // --- SETUP UI ---
+        function generatePlayerInputs() {
+            let count = parseInt(document.getElementById('playerCount').value) || 2;
+            let container = document.getElementById('player-names-container');
+            container.innerHTML = '';
+            for(let i=1; i<=count; i++) {
+                container.innerHTML += `<input type="text" id="pName${i}" value="Player ${i}" placeholder="Player ${i} Name">`;
+            }
+        }
+        generatePlayerInputs();
+
+        // --- CORE GAME LOOP ---
+        function startGame() {
+            let count = parseInt(document.getElementById('playerCount').value) || 2;
+            game.players =[];
+            for(let i=1; i<=count; i++) {
+                let name = document.getElementById(`pName${i}`).value || `Player ${i}`;
+                game.players.push({
+                    id: i-1, name: name, totalScore: 0, roundScore: 0, numCardsCount: 0, 
+                    status: 'active', secondChance: 0, cards:[]
+                });
+            }
+            document.getElementById('screen-setup').classList.remove('active');
+            document.getElementById('screen-game').classList.add('active');
+            
+            startRound();
+        }
+
+        function startRound() {
+            game.deck = createDeck();
+            game.players.forEach(p => {
+                p.roundScore = 0; p.numCardsCount = 0; p.status = 'active'; 
+                p.secondChance = 0; p.cards =[];
+            });
+            game.currPlayerIdx = 0;
+            game.roundActive = true;
+            updateBoard();
+        }
+
+        function updateBoard() {
+            document.getElementById('deck-count').innerText = game.deck.length;
+            
+            let grid = document.getElementById('players-grid');
+            grid.innerHTML = '';
+            
+            game.players.forEach((p, idx) => {
+                let isTurn = (idx === game.currPlayerIdx && game.roundActive);
+                let scBadge = p.secondChance > 0 ? `<span style="color:var(--warning)">⭐ Second Chance</span>` : '';
+                let statusBadge = p.status === 'frozen' ? '❄️ Frozen' : (p.status === 'busted' ? '💥 Busted' : '');
+                
+                let cardsHtml = p.cards.map(c => `<div class="mini-card ${c.type}">${c.val}</div>`).join('');
+                
+                grid.innerHTML += `
+                    <div class="player-card ${isTurn ? 'active-turn' : ''} ${p.status}">
+                        <div class="p-name">
+                            ${p.name} 
+                            <span style="font-size:14px; font-weight:normal;">Total: ${p.totalScore}</span>
+                        </div>
+                        <div class="p-stat">Round Score: <span>${p.roundScore}</span></div>
+                        <div class="p-stat">Number Cards: <span>${p.numCardsCount}/7</span></div>
+                        <div class="p-stat" style="min-height:20px; font-weight:bold;">${scBadge} ${statusBadge}</div>
+                        <div class="p-cards-list">${cardsHtml}</div>
+                        <div class="actions">
+                            <button class="btn-success" onclick="handleAction('draw')">Draw Card</button>
+                            <button class="btn-warning" onclick="handleAction('freeze')">Freeze</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if(game.roundActive) {
+                document.getElementById('turn-indicator').innerText = `${game.players[game.currPlayerIdx].name}'s Turn`;
+            } else {
+                document.getElementById('turn-indicator').innerText = `Round Over`;
+            }
+        }
+
+        async function handleAction(action) {
+            let p = game.players[game.currPlayerIdx];
+            if(action === 'freeze') {
+                p.status = 'frozen';
+                await showMessage(`${p.name} froze their score at ${p.roundScore}!`);
+                nextTurn();
+            } else if (action === 'draw') {
+                await drawAndResolve(p);
+                // Switch to next player after drawing one card (if round hasn't ended via win condition)
+                if(game.roundActive) {
+                    nextTurn();
+                }
+            }
+        }
+
+        function nextTurn() {
+            if(!game.roundActive) return;
+            
+            // Check if all players are busted or frozen
+            let activeCount = game.players.filter(p => p.status === 'active').length;
+            if(activeCount === 0) {
+                endRound();
+                return;
+            }
+
+            // Find next active player
+            do {
+                game.currPlayerIdx = (game.currPlayerIdx + 1) % game.players.length;
+            } while (game.players[game.currPlayerIdx].status !== 'active');
+            
+            updateBoard();
+        }
+
+        // --- ASYNC CARD RESOLUTION ---
+        async function drawAndResolve(player) {
+            if(game.deck.length === 0) game.deck = createDeck(); // Reshuffle if empty
+            let card = game.deck.pop();
+            await showMessage(`${player.name} drew: <strong>${card.val}</strong>`);
+
+            if(['number', 'positive', 'negative'].includes(card.type)) {
+                // Duplicate check for base number cards
+                if(card.type === 'number') {
+                    let hasDup = player.cards.some(c => c.type === 'number' && c.val === card.val);
+                    if(hasDup) {
+                        if(player.secondChance > 0) {
+                            player.secondChance--;
+                            await showMessage(`Duplicate ${card.val}! But ${player.name} used a Second Chance!`);
+                            return; // Discarded safely
+                        } else {
+                            player.status = 'busted';
+                            player.roundScore = 0;
+                            await showMessage(`💥 BUST! ${player.name} drew a duplicate ${card.val} and lost their points this round!`);
+                            return;
+                        }
+                    }
+                }
+
+                // Math Calculation check
+                let change = Number(card.val);
+                let expected = player.roundScore + change;
+                await promptMath(player, card, expected);
+
+                // Apply score and check Flip 7 win condition
+                player.roundScore = expected;
+                player.cards.push(card);
+                if(card.type === 'number') {
+                    player.numCardsCount++;
+                    if(player.numCardsCount >= 7) {
+                        await showMessage(`🎉 FLIP 7! ${player.name} collected 7 Number Cards and won the round!`);
+                        endRound(); // Triggers end of round
+                        return;
+                    }
+                }
+            } else if(card.type === 'special') {
+                if(card.val.includes('Freeze')) {
+                    let target = await promptPlayerSelect(`${player.name}, who do you want to FREEZE?`, getEligibleTargets(player, true));
+                    target.status = 'frozen';
+                    await showMessage(`❄️ ${target.name} is now frozen for the round!`);
+                    if(target.id === player.id) player.status = 'frozen'; // Froze self
+                } 
+                else if(card.val.includes('Flip 3')) {
+                    let target = await promptPlayerSelect(`${player.name}, who must FLIP 3 cards?`, getEligibleTargets(player, true));
+                    await executeFlip3(target);
+                } 
+                else if(card.val.includes('Second Chance')) {
+                    if(player.secondChance === 0) {
+                        player.secondChance++;
+                        await showMessage(`⭐ ${player.name} kept the Second Chance!`);
+                    } else {
+                        // Using a copy of the eligible targets list here so pushing the discard option doesn't mutate game.players
+                        let opts = [...getEligibleTargets(player, false)]; 
+                        opts.push({id: -1, name: 'Discard it'});
+                        let target = await promptPlayerSelect(`You already have a Second Chance! Give it away or discard:`, opts);
+                        if(target.id === -1) {
+                            await showMessage(`Second Chance discarded.`);
+                        } else {
+                            target.secondChance++;
+                            await showMessage(`⭐ ${target.name} was given a Second Chance!`);
+                        }
+                    }
+                }
+            }
+            updateBoard();
+        }
+
+        async function executeFlip3(target) {
+            await showMessage(`🌪️ ${target.name} must draw 3 cards!`);
+            for(let i=0; i<3; i++) {
+                if(target.status !== 'active' || !game.roundActive) break;
+                await drawAndResolve(target);
+            }
+        }
+
+        // --- ROUND END LOGIC ---
+        async function endRound() {
+            game.roundActive = false;
+            updateBoard();
+            
+            let msg = `<h3>Round Over!</h3><div style="text-align:left; margin:10px auto; max-width:200px;">`;
+            
+            let winner = null;
+            game.players.forEach(p => {
+                if(p.status !== 'busted') {
+                    p.totalScore += p.roundScore;
+                    msg += `✅ ${p.name}: +${p.roundScore} pts<br>`;
+                } else {
+                    msg += `💥 ${p.name}: 0 pts<br>`;
+                }
+                if(p.totalScore >= 200 && (!winner || p.totalScore > winner.totalScore)) {
+                    winner = p;
+                }
+            });
+            msg += `</div>`;
+
+            if(winner) {
+                msg += `<h2 style="color:var(--success)">🏆 ${winner.name} wins the game with ${winner.totalScore} points! 🏆</h2>`;
+                await showMessage(msg, "Play Again");
+                location.reload(); // Quick reset
+            } else {
+                await showMessage(msg, "Start Next Round");
+                startRound();
+            }
+        }
+
+        function getEligibleTargets(currentUser, onlyActive) {
+            // ALWAYS return a fresh array to prevent accidental mutations of the game state
+            return onlyActive ? game.players.filter(p => p.status === 'active') : [...game.players];
+        }
+
+        // --- MODAL PROMISE WRAPPERS ---
+        function showModal(html) {
+            let overlay = document.getElementById('modal-overlay');
+            let content = document.getElementById('modal-content');
+            content.innerHTML = html;
+            overlay.style.display = 'flex';
+        }
+        function hideModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        function showMessage(msgText, btnText = "Continue") {
+            return new Promise(resolve => {
+                showModal(`
+                    <p>${msgText}</p>
+                    <button class="btn-primary" id="msg-btn">${btnText}</button>
+                `);
+                document.getElementById('msg-btn').onclick = () => { hideModal(); resolve(); };
+            });
+        }
+
+        function promptMath(player, card, expectedResult) {
+            return new Promise(resolve => {
+                let op = card.type === 'positive' ? `add ${card.val.replace('+','')}` : 
+                         (card.type === 'negative' ? `subtract ${card.val.replace('-','')}` : `add ${card.val}`);
+                
+                showModal(`
+                    <h2>Math Check!</h2>
+                    <p>${player.name}, your score is <strong>${player.roundScore}</strong>.<br>You drew a <strong>${card.val}</strong>.</p>
+                    <div class="math-input-group">
+                        <label>What is your new score?</label>
+                        <input type="number" id="math-answer" autocomplete="off">
+                        <button class="btn-success" id="math-submit" style="width:150px; padding:10px;">Submit</button>
+                    </div>
+                `);
+
+                let input = document.getElementById('math-answer');
+                let btn = document.getElementById('math-submit');
+                input.focus();
+
+                let check = () => {
+                    if(parseInt(input.value) === expectedResult) {
+                        hideModal(); resolve();
+                    } else {
+                        input.classList.remove('error-shake');
+                        void input.offsetWidth; // trigger reflow
+                        input.classList.add('error-shake');
+                        input.value = '';
+                        input.focus();
+                    }
+                };
+
+                btn.onclick = check;
+                input.onkeypress = (e) => { if(e.key === 'Enter') check(); };
+            });
+        }
+
+        function promptPlayerSelect(title, optionsList) {
+            return new Promise(resolve => {
+                let btnsHtml = optionsList.map(opt => 
+                    `<button class="choice-btn" data-id="${opt.id}">${opt.name}</button>`
+                ).join('');
+
+                showModal(`
+                    <h2>Make a Choice</h2>
+                    <p>${title}</p>
+                    <div style="max-height: 200px; overflow-y:auto;">${btnsHtml}</div>
+                `);
+
+                let btns = document.querySelectorAll('.choice-btn');
+                btns.forEach(b => {
+                    b.onclick = () => {
+                        let chosenId = parseInt(b.getAttribute('data-id'));
+                        let chosenObj = optionsList.find(o => o.id === chosenId);
+                        hideModal();
+                        resolve(chosenObj);
+                    };
+                });
+            });
+        }
+    </script>
+</body>
+</html>
