@@ -341,7 +341,8 @@ Second Chance,4</textarea></div>
                 if(card.type === 'number') {
                     player.numCardsCount++;
                     if(player.numCardsCount >= 7) {
-                        await showMessage(`🎉 FLIP 7! ${player.name} collected 7 Number Cards and won the round!`);
+                        player.roundScore += 15;
+                        await showMessage(`🎉 FLIP 7! ${player.name} collected 7 Number Cards and won the round!<br><strong>+15 bonus points!</strong> New round score: ${player.roundScore}`);
                         endRound(); // Triggers end of round
                         return;
                     }
