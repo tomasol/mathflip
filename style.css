@@ -23,6 +23,7 @@ input[type="number"], input[type="text"], textarea { width: 100%; padding: 8px; 
 textarea { height: 60px; }
 button { padding: 10px 15px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; color: white; transition: opacity 0.2s; }
 button:hover { opacity: 0.9; }
+button:focus-visible { outline: 3px solid white; outline-offset: -3px; box-shadow: 0 0 0 5px rgba(0,0,0,0.5); }
 .btn-primary { background: var(--primary); width: 100%; margin-top: 15px; font-size: 18px; padding: 15px; }
 .btn-success { background: var(--success); }
 .btn-danger { background: var(--danger); }
