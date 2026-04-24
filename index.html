@@ -291,20 +291,20 @@ Second Chance,4</textarea></div>
                     await executeFlip3(target);
                 } 
                 else if(card.val.includes('Second Chance')) {
-                    if(player.secondChance === 0) {
-                        player.secondChance++;
-                        await showMessage(`⭐ ${player.name} kept the Second Chance!`);
+                    let opts = game.players.filter(p => p.secondChance === 0).map(p => ({...p}));
+                    opts.push({id: -1, name: 'Discard it'});
+                    let prompt = player.secondChance === 0
+                        ? `${player.name}, keep the Second Chance or give it away?`
+                        : `${player.name}, you already have a Second Chance! Give it away or discard:`;
+                    let target = await promptPlayerSelect(prompt, opts);
+                    if(target.id === -1) {
+                        await showMessage(`Second Chance discarded.`);
                     } else {
-                        // Using a copy of the eligible targets list here so pushing the discard option doesn't mutate game.players
-                        let opts = [...getEligibleTargets(player, false)]; 
-                        opts.push({id: -1, name: 'Discard it'});
-                        let target = await promptPlayerSelect(`You already have a Second Chance! Give it away or discard:`, opts);
-                        if(target.id === -1) {
-                            await showMessage(`Second Chance discarded.`);
-                        } else {
-                            target.secondChance++;
-                            await showMessage(`⭐ ${target.name} was given a Second Chance!`);
-                        }
+                        game.players[target.id].secondChance++;
+                        let msg = target.id === player.id
+                            ? `⭐ ${player.name} kept the Second Chance!`
+                            : `⭐ ${target.name} was given a Second Chance!`;
+                        await showMessage(msg);
                     }
                 }
             }
