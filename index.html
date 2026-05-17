@@ -158,6 +158,7 @@
             document.getElementById('screen-game').classList.add('active');
 
             startRound();
+            focusActivePlayer();
         }
 
         function startRound() {
@@ -184,6 +185,8 @@
 
                 let cardsHtml = p.cards.map(c => `<div class="mini-card ${c.type}">${c.val}</div>`).join('');
 
+                let disableAttr = isTurn ? '' : 'disabled';
+
                 grid.innerHTML += `
                     <div class="player-card ${isTurn ? 'active-turn' : ''} ${p.status}">
                         <div class="p-name">
@@ -195,8 +198,8 @@
                         <div class="p-stat" style="min-height:20px; font-weight:bold;">${scBadge} ${statusBadge}</div>
                         <div class="p-cards-list">${cardsHtml}</div>
                         <div class="actions">
-                            <button class="btn-success" onclick="handleAction('draw')">Draw Card</button>
-                            <button class="btn-warning" onclick="handleAction('freeze')">Freeze</button>
+                            <button id="draw-btn-${p.id}" class="btn-success" ${disableAttr} onclick="handleAction('draw')">Draw Card</button>
+                            <button class="btn-warning" ${disableAttr} onclick="handleAction('freeze')">Freeze</button>
                         </div>
                     </div>
                 `;
@@ -209,17 +212,26 @@
             }
         }
 
+        function focusActivePlayer() {
+            if (game.roundActive) {
+                let btn = document.getElementById(`draw-btn-${game.players[game.currPlayerIdx].id}`);
+                if (btn) btn.focus();
+            }
+        }
+
         async function handleAction(action) {
             let p = game.players[game.currPlayerIdx];
             if (action === 'freeze') {
                 p.status = 'frozen';
                 await showMessage(`${p.name} froze their score at ${p.roundScore}!`);
                 nextTurn();
+                focusActivePlayer();
             } else if (action === 'draw') {
                 await drawAndResolve(p);
                 // Switch to next player after drawing one card (if round hasn't ended via win condition)
                 if (game.roundActive) {
                     nextTurn();
+                    focusActivePlayer();
                 }
             }
         }
@@ -356,6 +368,7 @@
             } else {
                 await showMessage(msg, "Start Next Round");
                 startRound();
+                focusActivePlayer();
             }
         }
 
@@ -437,6 +450,8 @@
                 `);
 
                 let btns = document.querySelectorAll('.choice-btn');
+                if (btns.length > 0) btns[0].focus();
+
                 btns.forEach(b => {
                     b.onclick = () => {
                         let chosenId = parseInt(b.getAttribute('data-id'));
